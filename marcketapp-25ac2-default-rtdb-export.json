@@ -1,0 +1,29 @@
+{
+  "products": {
+    "Q5sVbHJEtQZkIF2ejis1j4v7Fz72": {
+      "-Od8PpNaX9yw51no4Gvy": {
+        "category": "Juguetes",
+        "description": "moto chica x300 motor gigante",
+        "imageUrl": "https://firebasestorage.googleapis.com/v0/b/marcketapp-25ac2.firebasestorage.app/o/product_images%2FQ5sVbHJEtQZkIF2ejis1j4v7Fz72_1762168361410.jpg?alt=media&token=4e314f96-5ea4-4a71-8e42-8f0300982309",
+        "isFeatured": true,
+        "name": "Moto chica",
+        "price": 6000,
+        "stock": 32
+      }
+    }
+  },
+  "users": {
+    "Q5sVbHJEtQZkIF2ejis1j4v7Fz72": {
+      "businessAddress": "Carmen",
+      "businessName": "Pescadería Atasta",
+      "dob": "04/03/2004",
+      "email": "gonzalezalcocera5@gmail.com",
+      "fullName": "Ángel Del Carmen González Alcocer",
+      "phoneNumber": "9381321268",
+      "placeOfBirth": "Villahermosa",
+      "profilePicture": "https://firebasestorage.googleapis.com/v0/b/marcketapp-25ac2.firebasestorage.app/o/profile_pictures%2FQ5sVbHJEtQZkIF2ejis1j4v7Fz72.jpg?alt=media&token=6f2d2085-2c1a-4884-bb84-ba592527c1b4",
+      "rfc": "GOAA040304",
+      "userType": "Seller"
+    }
+  }
+}

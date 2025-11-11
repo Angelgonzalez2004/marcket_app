@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "766952734433",
+    "firebase_url": "https://marcketapp-25ac2-default-rtdb.firebaseio.com",
+    "project_id": "marcketapp-25ac2",
+    "storage_bucket": "marcketapp-25ac2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:766952734433:android:048cb9d1a80f498cca01a0",
+        "android_client_info": {
+          "package_name": "com.example.marcket_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARGAn5xnUPnomchx9MBd9JfZAg7VMKOqA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
