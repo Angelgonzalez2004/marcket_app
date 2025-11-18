@@ -1,7 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:marcket_app/models/order.dart';
 import 'package:marcket_app/services/cart_service.dart';
 import 'package:marcket_app/models/cart_item.dart';
 import 'package:marcket_app/utils/theme.dart';
+import 'package:collection/collection.dart'; // Import for groupBy
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -12,6 +16,79 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   final CartService _cartService = CartService();
+  bool _isProcessing = false;
+
+  Future<void> _checkout(List<CartItem> cartItems) async {
+    setState(() {
+      _isProcessing = true;
+    });
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debes iniciar sesión para comprar.')),
+      );
+      setState(() {
+        _isProcessing = false;
+      });
+      return;
+    }
+
+    // Group items by seller
+    final itemsBySeller = groupBy(cartItems, (CartItem item) => item.sellerId);
+
+    try {
+      final ordersRef = FirebaseDatabase.instance.ref('orders');
+
+      for (var entry in itemsBySeller.entries) {
+        final sellerId = entry.key;
+        final sellerItems = entry.value;
+        final totalPrice = sellerItems.fold<double>(0, (sum, item) => sum + (item.price * item.quantity));
+        final newOrderId = ordersRef.push().key;
+
+        if (newOrderId == null) {
+          throw Exception('Failed to create a new order ID.');
+        }
+
+        final newOrder = Order(
+          id: newOrderId,
+          buyerId: user.uid,
+          sellerId: sellerId,
+          items: sellerItems,
+          totalPrice: totalPrice,
+          status: OrderStatus.pending,
+          createdAt: DateTime.now(),
+        );
+
+        await ordersRef.child(newOrderId).set(newOrder.toMap());
+      }
+
+      // Clear the cart after successful order creation
+      await _cartService.clearCart();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Pedido realizado con éxito!'),
+          backgroundColor: AppTheme.success,
+        ),
+      );
+      
+      // TODO: Navigate to the 'My Orders' screen
+      // Navigator.pushReplacementNamed(context, '/buyer_orders');
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al crear el pedido: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -50,10 +127,7 @@ class _CartScreenState extends State<CartScreen> {
           }
 
           final cartItems = snapshot.data!;
-          double total = 0;
-          for (var item in cartItems) {
-            total += item.price * item.quantity;
-          }
+          double total = cartItems.fold(0, (sum, item) => sum + (item.price * item.quantity));
 
           return Column(
             children: [
@@ -82,7 +156,8 @@ class _CartScreenState extends State<CartScreen> {
                                 children: [
                                   Text(item.name, style: Theme.of(context).textTheme.titleMedium),
                                   Text('\$${item.price.toStringAsFixed(2)}', style: Theme.of(context).textTheme.bodyLarge),
-                                  Text('Vendedor: ${item.sellerId}', style: Theme.of(context).textTheme.bodySmall), // Display seller ID for now
+                                  // TODO: Fetch and display seller name instead of ID
+                                  Text('Vendedor: ${item.sellerId.substring(0, 6)}...', style: Theme.of(context).textTheme.bodySmall),
                                 ],
                               ),
                             ),
@@ -91,7 +166,11 @@ class _CartScreenState extends State<CartScreen> {
                                 IconButton(
                                   icon: const Icon(Icons.remove),
                                   onPressed: () {
-                                    _cartService.updateCartItemQuantity(item.productId, item.quantity - 1);
+                                    if (item.quantity > 1) {
+                                      _cartService.updateCartItemQuantity(item.productId, item.quantity - 1);
+                                    } else {
+                                      _cartService.removeFromCart(item.productId);
+                                    }
                                   },
                                 ),
                                 Text('${item.quantity}', style: Theme.of(context).textTheme.titleMedium),
@@ -131,14 +210,11 @@ class _CartScreenState extends State<CartScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          // Implement checkout logic here
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Funcionalidad de pago no implementada aún.')),
-                          );
-                        },
-                        icon: const Icon(Icons.payment),
-                        label: const Text('Proceder al Pago'),
+                        onPressed: (cartItems.isEmpty || _isProcessing) ? null : () => _checkout(cartItems),
+                        icon: _isProcessing ? const SizedBox.shrink() : const Icon(Icons.check_circle_outline),
+                        label: _isProcessing
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text('Finalizar Compra'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primary,
                           foregroundColor: Colors.white,

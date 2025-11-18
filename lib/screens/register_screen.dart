@@ -29,12 +29,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _placeOfBirthController = TextEditingController();
   final TextEditingController _businessNameController = TextEditingController();
   final TextEditingController _businessAddressController = TextEditingController();
+  final TextEditingController _adminKeyController = TextEditingController();
 
   DateTime? _selectedDate;
   File? _image;
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isRegisteringAsAdmin = false;
 
   Future<void> _pickImage() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -52,6 +54,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       try {
+        String userType = _selectedUserType;
+        if (_isRegisteringAsAdmin) {
+          if (_adminKeyController.text.trim() != '12345678') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('La clave de administrador es incorrecta.'),
+                backgroundColor: AppTheme.error,
+              ),
+            );
+            if (mounted) {
+              setState(() => _isLoading = false);
+            }
+            return; // Stop registration
+          }
+          userType = 'admin';
+        }
+
         UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
@@ -72,19 +91,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Map<String, dynamic> userData = {
           'fullName': _fullNameController.text.trim(),
           'email': _emailController.text.trim(),
-          'userType': _selectedUserType,
-          'dob': _dobController.text.trim(),
-          'rfc': _rfcController.text.trim(),
-          'phoneNumber': _phoneNumberController.text.trim(),
-          'placeOfBirth': _placeOfBirthController.text.trim(),
+          'userType': userType,
           'profilePicture': imageUrl,
         };
 
-        if (_selectedUserType == 'Seller') {
+        if (userType == 'admin') {
+          // Admin specific data can be added here if needed in the future
+        } else {
+          // Common data for Buyer and Seller
           userData.addAll({
-            'businessName': _businessNameController.text.trim(),
-            'businessAddress': _businessAddressController.text.trim(),
+            'dob': _dobController.text.trim(),
+            'rfc': _rfcController.text.trim(),
+            'phoneNumber': _phoneNumberController.text.trim(),
+            'placeOfBirth': _placeOfBirthController.text.trim(),
           });
+
+          if (userType == 'Seller') {
+            userData.addAll({
+              'businessName': _businessNameController.text.trim(),
+              'businessAddress': _businessAddressController.text.trim(),
+            });
+          }
         }
 
         await userRef.set(userData);
@@ -145,6 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _placeOfBirthController.dispose();
     _businessNameController.dispose();
     _businessAddressController.dispose();
+    _adminKeyController.dispose();
     super.dispose();
   }
 
@@ -183,7 +211,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(height: 20.0),
                           _buildImagePicker(),
                           const SizedBox(height: 20.0),
-                          _buildUserTypeSelector(),
+                          _buildAdminSwitch(),
+                          const SizedBox(height: 20.0),
+                          if (_isRegisteringAsAdmin)
+                            _buildAdminKeyField()
+                          else
+                            _buildUserTypeSelector(),
                           const SizedBox(height: 20.0),
                           _buildTextField(_fullNameController, 'Nombre Completo', Icons.person),
                           const SizedBox(height: 20.0),
@@ -192,15 +225,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _buildPasswordField(_passwordController, 'Contraseña', isConfirm: false),
                           const SizedBox(height: 20.0),
                           _buildPasswordField(_confirmPasswordController, 'Confirmar Contraseña', isConfirm: true),
-                          const SizedBox(height: 20.0),
-                          _buildDateField(),
-                          const SizedBox(height: 20.0),
-                          _buildTextField(_rfcController, 'RFC', Icons.badge),
-                          const SizedBox(height: 20.0),
-                          _buildTextField(_phoneNumberController, 'Número de Teléfono', Icons.phone, keyboardType: TextInputType.phone),
-                          const SizedBox(height: 20.0),
-                          _buildTextField(_placeOfBirthController, 'Lugar de Nacimiento', Icons.location_city),
-                          if (_selectedUserType == 'Seller') ...[
+                          if (!_isRegisteringAsAdmin) ...[
+                            const SizedBox(height: 20.0),
+                            _buildDateField(),
+                            const SizedBox(height: 20.0),
+                            _buildTextField(_rfcController, 'RFC', Icons.badge),
+                            const SizedBox(height: 20.0),
+                            _buildTextField(_phoneNumberController, 'Número de Teléfono', Icons.phone, keyboardType: TextInputType.phone),
+                            const SizedBox(height: 20.0),
+                            _buildTextField(_placeOfBirthController, 'Lugar de Nacimiento', Icons.location_city),
+                          ],
+                          if (_selectedUserType == 'Seller' && !_isRegisteringAsAdmin) ...[
                             const SizedBox(height: 20.0),
                             _buildTextField(_businessNameController, 'Nombre del Negocio', Icons.business),
                             const SizedBox(height: 20.0),
@@ -220,7 +255,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black54,
               child: const Center(
                 child: CircularProgressIndicator(),
               ),
@@ -250,6 +285,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  Widget _buildAdminSwitch() {
+    return SwitchListTile(
+      title: const Text('Registrarse como Administrador'),
+      value: _isRegisteringAsAdmin,
+      onChanged: (bool value) {
+        setState(() {
+          _isRegisteringAsAdmin = value;
+        });
+      },
+      secondary: const Icon(Icons.shield, color: AppTheme.primary),
+    );
+  }
+
+  Widget _buildAdminKeyField() {
+    return TextFormField(
+      controller: _adminKeyController,
+      obscureText: true,
+      decoration: const InputDecoration(
+        labelText: 'Clave de Administrador',
+        prefixIcon: Icon(Icons.vpn_key, color: AppTheme.primary),
+      ),
+      validator: (value) {
+        if (_isRegisteringAsAdmin && (value == null || value.isEmpty)) {
+          return 'Por favor ingresa la clave de administrador';
+        }
+        return null;
+      },
+    );
+  }
+
   Widget _buildUserTypeSelector() {
     return Center(
       child: SegmentedButton<String>(
@@ -268,6 +333,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildTextField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType}) {
+    // For admin, only name and email are mandatory
+    bool isOptional = _isRegisteringAsAdmin &&
+        label != 'Nombre Completo' &&
+        label != 'Correo Electrónico';
+
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
@@ -276,6 +346,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       keyboardType: keyboardType,
       validator: (value) {
+        if (isOptional) return null; // Skip validation for optional fields for admin
+
         if (value == null || value.isEmpty) {
           return 'Por favor ingresa $label';
         }
@@ -335,7 +407,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         prefixIcon: Icon(Icons.calendar_today, color: AppTheme.primary),
       ),
       validator: (value) {
-        if (value == null || value.isEmpty) {
+        if (!_isRegisteringAsAdmin && (value == null || value.isEmpty)) {
           return 'Por favor selecciona tu fecha de nacimiento';
         }
         return null;

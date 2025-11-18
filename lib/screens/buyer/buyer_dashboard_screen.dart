@@ -40,9 +40,11 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
     if (user != null) {
       final snapshot = await _databaseRef.child('users/${user.uid}').get();
       if (snapshot.exists) {
-        setState(() {
-          _currentUserModel = UserModel.fromMap(Map<String, dynamic>.from(snapshot.value as Map), user.uid);
-        });
+        if (mounted) {
+          setState(() {
+            _currentUserModel = UserModel.fromMap(Map<String, dynamic>.from(snapshot.value as Map), user.uid);
+          });
+        }
       }
     }
   }
@@ -78,8 +80,8 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
               ),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: AppTheme.secondary,
-                backgroundImage: user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
-                child: user?.photoURL == null
+                backgroundImage: _currentUserModel?.profilePicture != null ? NetworkImage(_currentUserModel!.profilePicture!) : null,
+                child: _currentUserModel?.profilePicture == null
                     ? const Icon(Icons.person, size: 40, color: AppTheme.onSecondary)
                     : null,
               ),
@@ -91,7 +93,50 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
             _buildDrawerItem(Icons.shopping_bag, 'Mis Pedidos', 1),
             _buildDrawerItem(Icons.person, 'Mi Perfil', 2),
             _buildDrawerItem(Icons.chat, 'Mensajes', 3),
-            _buildDrawerItem(Icons.store, 'Test Seller Profile', 4), // for testing
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.support_agent, color: AppTheme.secondary),
+              title: Text('Soporte Técnico', style: textTheme.bodyMedium),
+              onTap: () async {
+                Navigator.pop(context); // Close drawer first
+                if (user == null) return;
+
+                // ================== IMPORTANTE ==================
+                // TODO: Reemplaza esto con el UID real de un usuario administrador en tu base de datos.
+                // Puedes encontrar el UID en la sección de Autenticación de tu consola de Firebase.
+                const adminId = 'REPLACE_WITH_REAL_ADMIN_UID';
+                // ================================================
+
+                if (adminId == 'REPLACE_WITH_REAL_ADMIN_UID') {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('La función de soporte no está configurada por el administrador.'),
+                      backgroundColor: AppTheme.error,
+                    ),
+                  );
+                  return;
+                }
+
+                final chatRoomId = 'support_${user.uid}';
+                final chatRoomRef = FirebaseDatabase.instance.ref('chat_rooms/$chatRoomId');
+
+                final snapshot = await chatRoomRef.get();
+                if (!snapshot.exists) {
+                  final newChatRoomData = {
+                    'participants': [user.uid, adminId],
+                    'lastMessage': 'Inicia tu conversación con soporte.',
+                    'lastMessageTimestamp': DateTime.now().millisecondsSinceEpoch,
+                  };
+                  await chatRoomRef.set(newChatRoomData);
+                }
+
+                Navigator.pushNamed(context, '/chat', arguments: {
+                  'chatRoomId': chatRoomId,
+                  'otherUserName': 'Soporte Técnico',
+                  'otherUserId': adminId,
+                });
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: AppTheme.error),
@@ -99,13 +144,6 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
               onTap: () async {
                 await FirebaseAuth.instance.signOut();
                 Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('¡Sesión cerrada exitosamente!'),
-                    duration: Duration(seconds: 3),
-                    backgroundColor: AppTheme.success,
-                  ),
-                );
               },
             ),
           ],
@@ -127,13 +165,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
       selected: isSelected,
       selectedTileColor: AppTheme.primary.withOpacity(0.1),
       onTap: () {
-        if (index == 4) { // Test Seller Profile (now at index 4)
-          Navigator.pop(context); // Close the drawer
-          // TODO: Replace with actual seller ID
-          Navigator.pushNamed(context, '/public_seller_profile', arguments: 'SELLER_USER_ID');
-        } else {
-          _onItemTapped(index);
-        }
+        _onItemTapped(index);
       },
     );
   }

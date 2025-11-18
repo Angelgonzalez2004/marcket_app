@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:marcket_app/utils/theme.dart';
 
@@ -27,9 +28,22 @@ class _SplashScreenState extends State<SplashScreen> {
 
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      // If the user is logged in, navigate to the home screen
-      // You might want to fetch user type here and pass it to home
-      Navigator.pushReplacementNamed(context, '/home', arguments: 'Buyer'); // Defaulting to Buyer for now
+      try {
+        final snapshot = await FirebaseDatabase.instance.ref('users/${user.uid}').get();
+        if (snapshot.exists && mounted) {
+          final userData = Map<String, dynamic>.from(snapshot.value as Map);
+          final userType = userData['userType'] as String?;
+          Navigator.pushReplacementNamed(context, '/home', arguments: userType ?? 'Buyer');
+        } else {
+          // User exists in Auth but not in DB, something is wrong.
+          await FirebaseAuth.instance.signOut();
+          Navigator.pushReplacementNamed(context, '/');
+        }
+      } catch (e) {
+        // Handle potential errors (e.g., network issue)
+        await FirebaseAuth.instance.signOut();
+        Navigator.pushReplacementNamed(context, '/');
+      }
     } else {
       // If not logged in, navigate to the welcome screen
       Navigator.pushReplacementNamed(context, '/');

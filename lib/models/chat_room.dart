@@ -5,7 +5,7 @@ class ChatRoom {
   final String lastMessage;
   final DateTime lastMessageTimestamp;
 
-  ChatRoom({
+  const ChatRoom({
     required this.id,
     required this.participants,
     required this.lastMessage,

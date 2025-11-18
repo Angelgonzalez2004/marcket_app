@@ -11,7 +11,7 @@ class Publication {
   final List<Comment> comments;
   final DateTime? modifiedTimestamp;
 
-  Publication({
+  const Publication({
     required this.id,
     required this.sellerId,
     required this.title,

@@ -135,7 +135,7 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
           ),
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black54,
               child: const Center(
                 child: CircularProgressIndicator(),
               ),

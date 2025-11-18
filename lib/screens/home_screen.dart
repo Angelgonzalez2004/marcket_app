@@ -22,6 +22,8 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.pushReplacementNamed(context, '/buyer_dashboard');
       } else if (widget.userType == 'Seller') {
         Navigator.pushReplacementNamed(context, '/seller_dashboard');
+      } else if (widget.userType == 'admin') {
+        Navigator.pushReplacementNamed(context, '/admin_dashboard');
       } else {
         // Default to buyer or show an error
         Navigator.pushReplacementNamed(context, '/buyer_dashboard');
@@ -32,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     // This screen will just show a loading indicator while redirecting
-    return Scaffold(
+    return const Scaffold(
       body: Center(
         child: CircularProgressIndicator(),
       ),

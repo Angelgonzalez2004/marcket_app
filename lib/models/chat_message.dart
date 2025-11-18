@@ -3,14 +3,16 @@ class ChatMessage {
   final String id;
   final String senderId;
   final String text;
-  final String? imageUrl;
+  final String messageType; // 'text', 'image', 'video'
+  final String? mediaUrl;
   final DateTime timestamp;
 
-  ChatMessage({
+  const ChatMessage({
     required this.id,
     required this.senderId,
     required this.text,
-    this.imageUrl,
+    required this.messageType,
+    this.mediaUrl,
     required this.timestamp,
   });
 
@@ -19,7 +21,8 @@ class ChatMessage {
       id: id,
       senderId: map['senderId'] ?? '',
       text: map['text'] ?? '',
-      imageUrl: map['imageUrl'],
+      messageType: map['messageType'] ?? 'text',
+      mediaUrl: map['mediaUrl'],
       timestamp: DateTime.fromMillisecondsSinceEpoch(map['timestamp'] ?? 0),
     );
   }
@@ -28,7 +31,8 @@ class ChatMessage {
     return {
       'senderId': senderId,
       'text': text,
-      'imageUrl': imageUrl,
+      'messageType': messageType,
+      'mediaUrl': mediaUrl,
       'timestamp': timestamp.millisecondsSinceEpoch,
     };
   }

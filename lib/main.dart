@@ -19,6 +19,7 @@ import 'package:marcket_app/screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:marcket_app/utils/theme.dart';
 import 'firebase_options.dart';
+import 'package:marcket_app/screens/admin/admin_dashboard_screen.dart';
 import 'package:marcket_app/screens/seller/create_edit_publication_screen.dart';
 
 void main() async {
@@ -40,17 +41,19 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.theme,
       initialRoute: '/splash',
       routes: {
-        '/splash': (context) => SplashScreen(),
-        '/': (context) => WelcomeScreen(),
-        '/login': (context) => LoginScreen(),
-        '/register': (context) => RegisterScreen(),
+        '/splash': (context) => const SplashScreen(),
+        '/': (context) => const WelcomeScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
         '/home': (context) {
-          final args = ModalRoute.of(context)?.settings.arguments as String?;
-          return HomeScreen(userType: args ?? 'Buyer');
+          final args = ModalRoute.of(context)?.settings.arguments;
+          final userType = args is String ? args : 'Buyer';
+          return HomeScreen(userType: userType);
         },
-        '/recover_password': (context) => RecoverPasswordScreen(),
+        '/recover_password': (context) => const RecoverPasswordScreen(),
         '/buyer_dashboard': (context) => const BuyerDashboardScreen(),
-        '/seller_dashboard': (context) => SellerDashboardScreen(),
+        '/seller_dashboard': (context) => const SellerDashboardScreen(),
+        '/admin_dashboard': (context) => const AdminDashboardScreen(),
         '/add_edit_product': (context) {
           final product = ModalRoute.of(context)!.settings.arguments as Product?;
           return AddEditProductScreen(product: product);
@@ -63,17 +66,24 @@ class MyApp extends StatelessWidget {
           final publication = ModalRoute.of(context)!.settings.arguments as Publication;
           return PublicationDetailsScreen(publication: publication);
         },
-        '/chat_list': (context) => ChatListScreen(),
+        '/chat_list': (context) => const ChatListScreen(),
         '/chat': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
-          return ChatScreen(
-            chatRoomId: args['chatRoomId']!,
-            otherUserName: args['otherUserName']!,
-          );
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>?;
+          if (args != null) {
+            return ChatScreen(
+              chatRoomId: args['chatRoomId']!,
+              otherUserName: args['otherUserName']!,
+            );
+          }
+          // Return a fallback widget or throw an error if args are null
+          return const Scaffold(body: Center(child: Text("Error: Chat room details not provided.")));
         },
         '/public_seller_profile': (context) {
-          final sellerId = ModalRoute.of(context)!.settings.arguments as String;
-          return PublicSellerProfileScreen(sellerId: sellerId);
+          final sellerId = ModalRoute.of(context)!.settings.arguments as String?;
+          if (sellerId != null) {
+            return PublicSellerProfileScreen(sellerId: sellerId);
+          }
+          return const Scaffold(body: Center(child: Text("Error: Seller ID not provided.")));
         },
       },
       localizationsDelegates: const [ // New

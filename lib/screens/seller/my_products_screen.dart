@@ -41,7 +41,7 @@ class MyProductsScreen extends StatelessWidget {
           try {
             await FirebaseStorage.instance.refFromURL(imageUrl).delete();
           } catch (e) {
-            print('Error deleting image from storage: $e');
+            debugPrint('Error deleting image from storage: $e');
           }
         }
 

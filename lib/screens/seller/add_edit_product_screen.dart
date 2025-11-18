@@ -108,6 +108,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
       // 3. Combine image URL lists
       final finalImageUrls = [..._existingImageUrls, ...newImageUrls];
+      final userId = FirebaseAuth.instance.currentUser!.uid;
 
       // 4. Prepare product data
       final productData = {
@@ -116,16 +117,20 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         'price': double.parse(_priceController.text.trim()),
         'stock': int.parse(_stockController.text.trim()),
         'category': _categoryController.text.trim(),
-        'imageUrls': finalImageUrls, // Changed from imageUrl
+        'imageUrls': finalImageUrls,
         'isFeatured': _isFeatured,
+        'sellerId': userId, // Always include sellerId
       };
 
-      final userId = FirebaseAuth.instance.currentUser!.uid;
       final productsRef = FirebaseDatabase.instance.ref('products/$userId');
 
       if (widget.product != null) {
+        // Updating an existing product
         await productsRef.child(widget.product!.id).update(productData);
       } else {
+        // Creating a new product
+        productData['averageRating'] = 0.0;
+        productData['reviewCount'] = 0;
         await productsRef.push().set(productData);
       }
 
@@ -203,7 +208,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           ),
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black54,
               child: const Center(child: CircularProgressIndicator()),
             ),
         ],

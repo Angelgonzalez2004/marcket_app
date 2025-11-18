@@ -11,9 +11,10 @@ class UserModel {
   final String? profilePicture;
   final String? businessName;
   final String? businessAddress;
-  final String? address; // Added address field
+  final String? address;
+  final String? paymentInstructions; // New field
 
-  UserModel({
+  const UserModel({
     required this.id,
     required this.fullName,
     required this.email,
@@ -25,7 +26,8 @@ class UserModel {
     this.profilePicture,
     this.businessName,
     this.businessAddress,
-    this.address, // Added to constructor
+    this.address,
+    this.paymentInstructions, // Added to constructor
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map, String id) {
@@ -41,7 +43,8 @@ class UserModel {
       profilePicture: map['profilePicture'],
       businessName: map['businessName'],
       businessAddress: map['businessAddress'],
-      address: map['address'], // Added to fromMap
+      address: map['address'],
+      paymentInstructions: map['paymentInstructions'], // Added to fromMap
     );
   }
 
@@ -58,6 +61,7 @@ class UserModel {
     String? businessName,
     String? businessAddress,
     String? address,
+    String? paymentInstructions, // Added to copyWith
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -72,6 +76,7 @@ class UserModel {
       businessName: businessName ?? this.businessName,
       businessAddress: businessAddress ?? this.businessAddress,
       address: address ?? this.address,
+      paymentInstructions: paymentInstructions ?? this.paymentInstructions,
     );
   }
 }

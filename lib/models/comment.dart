@@ -7,7 +7,7 @@ class Comment {
   final DateTime timestamp;
   final String? imageUrl; // New field for the comment image
 
-  Comment({
+  const Comment({
     required this.id,
     required this.userId,
     required this.userName,

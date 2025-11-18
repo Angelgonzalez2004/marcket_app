@@ -88,6 +88,7 @@ class _ProfileFormState extends State<ProfileForm> {
   final _dobController = TextEditingController();
   final _placeOfBirthController = TextEditingController();
   final _rfcController = TextEditingController();
+  final _paymentInstructionsController = TextEditingController(); // New controller
 
   bool _isLoading = false;
   File? _imageFile;
@@ -98,6 +99,16 @@ class _ProfileFormState extends State<ProfileForm> {
     super.initState();
     _user = _auth.currentUser;
     _loadUserData();
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _dobController.dispose();
+    _placeOfBirthController.dispose();
+    _rfcController.dispose();
+    _paymentInstructionsController.dispose(); // Dispose new controller
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -112,6 +123,7 @@ class _ProfileFormState extends State<ProfileForm> {
             _placeOfBirthController.text = data['placeOfBirth'] ?? '';
             _rfcController.text = data['rfc'] ?? '';
             _networkImageUrl = data['profilePicture'];
+            _paymentInstructionsController.text = data['paymentInstructions'] ?? ''; // Load data
           });
         }
       }
@@ -220,6 +232,13 @@ class _ProfileFormState extends State<ProfileForm> {
           _buildTextField(_placeOfBirthController, 'Lugar de Nacimiento', Icons.location_city),
           const SizedBox(height: 16),
           _buildTextField(_rfcController, 'RFC', Icons.badge),
+          const SizedBox(height: 16),
+          _buildTextField( // New field
+            _paymentInstructionsController,
+            'Instrucciones de Pago',
+            Icons.payment,
+            maxLines: 3,
+          ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: _updateProfile,
@@ -240,14 +259,21 @@ class _ProfileFormState extends State<ProfileForm> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon) {
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {int maxLines = 1}) {
     return TextFormField(
       controller: controller,
+      maxLines: maxLines,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: AppTheme.primary),
       ),
-      validator: (value) => value!.isEmpty ? 'Por favor, introduce tu $label' : null,
+      validator: (value) {
+        // Making payment instructions optional
+        if (label == 'Instrucciones de Pago') {
+          return null;
+        }
+        return value!.isEmpty ? 'Por favor, introduce tu $label' : null;
+      }
     );
   }
   
@@ -337,6 +363,7 @@ class _ProfileFormState extends State<ProfileForm> {
           'dob': _dobController.text,
           'placeOfBirth': _placeOfBirthController.text,
           'rfc': _rfcController.text,
+          'paymentInstructions': _paymentInstructionsController.text, // Save new field
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('¡Perfil actualizado con éxito!'), backgroundColor: AppTheme.success),

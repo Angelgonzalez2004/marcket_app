@@ -34,9 +34,11 @@ class _PublicSellerProfileScreenState extends State<PublicSellerProfileScreen> w
   Future<void> _loadSellerData() async {
     final snapshot = await FirebaseDatabase.instance.ref('users/${widget.sellerId}').get();
     if (snapshot.exists) {
-      setState(() {
-        _seller = UserModel.fromMap(Map<String, dynamic>.from(snapshot.value as Map), snapshot.key!);
-      });
+      if (mounted) {
+        setState(() {
+          _seller = UserModel.fromMap(Map<String, dynamic>.from(snapshot.value as Map), snapshot.key!);
+        });
+      }
     }
   }
 
@@ -49,14 +51,12 @@ class _PublicSellerProfileScreenState extends State<PublicSellerProfileScreen> w
   Future<void> _navigateToChat() async {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
-      // Ideally, prompt user to log in
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor, inicia sesión para chatear.'))
       );
       return;
     }
     
-    // If the user is viewing their own profile, navigate to their chat list
     if (currentUser.uid == widget.sellerId) {
       Navigator.pushNamed(context, '/chat_list');
       return;
@@ -70,7 +70,7 @@ class _PublicSellerProfileScreenState extends State<PublicSellerProfileScreen> w
       final newChatRoom = ChatRoom(
         id: chatRoomId,
         participants: [currentUser.uid, widget.sellerId],
-        lastMessage: '',
+        lastMessage: 'Chat iniciado.',
         lastMessageTimestamp: DateTime.now(),
       );
       await chatRoomRef.set(newChatRoom.toMap());
@@ -92,7 +92,6 @@ class _PublicSellerProfileScreenState extends State<PublicSellerProfileScreen> w
       appBar: AppBar(
         title: Text(_seller?.fullName ?? 'Perfil del Vendedor'),
         actions: [
-          // Only show chat icon if a seller is loaded
           if (_seller != null)
             IconButton(
               icon: const Icon(Icons.chat_bubble_outline),
@@ -106,8 +105,8 @@ class _PublicSellerProfileScreenState extends State<PublicSellerProfileScreen> w
             Tab(icon: Icon(Icons.article), text: 'Publicaciones'),
             Tab(icon: Icon(Icons.store), text: 'Productos'),
           ],
-          labelColor: Colors.white, // Changed to white for better visibility
-          unselectedLabelColor: Colors.white.withOpacity(0.7), // Changed to white with opacity
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white.withOpacity(0.7),
         ),
       ),
       body: _seller == null

@@ -7,9 +7,11 @@ class Product {
   final List<String> imageUrls;
   final String category;
   final bool isFeatured;
-  final String sellerId; // Add sellerId
+  final String sellerId;
+  final double averageRating; // New field
+  final int reviewCount; // New field
 
-  Product({
+  const Product({
     required this.id,
     required this.name,
     required this.description,
@@ -18,7 +20,9 @@ class Product {
     required this.imageUrls,
     required this.category,
     required this.isFeatured,
-    required this.sellerId, // Add to constructor
+    required this.sellerId,
+    required this.averageRating,
+    required this.reviewCount,
   });
 
   factory Product.fromMap(Map<String, dynamic> map, String id, {String? sellerIdParam}) {
@@ -38,7 +42,9 @@ class Product {
       imageUrls: imageUrls,
       category: map['category'] ?? '',
       isFeatured: map['isFeatured'] ?? false,
-      sellerId: sellerIdParam ?? map['sellerId'] ?? '', // Use sellerIdParam if provided
+      sellerId: sellerIdParam ?? map['sellerId'] ?? '',
+      averageRating: (map['averageRating'] ?? 0.0).toDouble(), // Added to fromMap
+      reviewCount: map['reviewCount'] ?? 0, // Added to fromMap
     );
   }
 
@@ -51,7 +57,9 @@ class Product {
       'imageUrls': imageUrls,
       'category': category,
       'isFeatured': isFeatured,
-      'sellerId': sellerId, // Add to toMap
+      'sellerId': sellerId,
+      'averageRating': averageRating, // Added to toMap
+      'reviewCount': reviewCount, // Added to toMap
     };
   }
 }

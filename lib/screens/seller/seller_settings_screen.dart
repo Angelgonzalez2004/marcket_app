@@ -45,12 +45,14 @@ class _SellerSettingsScreenState extends State<SellerSettingsScreen> {
       final snapshot = await _database.child('users/${_user!.uid}').get();
       if (snapshot.exists) {
         final data = Map<String, dynamic>.from(snapshot.value as Map);
-        setState(() {
-          _businessNameController.text = data['businessName'] ?? '';
-          _businessAddressController.text = data['businessAddress'] ?? '';
-          _phoneNumberController.text = data['phoneNumber'] ?? '';
-          _currentEmailController.text = _user!.email ?? '';
-        });
+        if (mounted) {
+          setState(() {
+            _businessNameController.text = data['businessName'] ?? '';
+            _businessAddressController.text = data['businessAddress'] ?? '';
+            _phoneNumberController.text = data['phoneNumber'] ?? '';
+            _currentEmailController.text = _user!.email ?? '';
+          });
+        }
       }
     }
   }
@@ -129,7 +131,7 @@ class _SellerSettingsScreenState extends State<SellerSettingsScreen> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al actualizar la información.'), backgroundColor: AppTheme.error),
+        SnackBar(content: Text('Error al actualizar la información: ${e.toString()}'), backgroundColor: AppTheme.error),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);

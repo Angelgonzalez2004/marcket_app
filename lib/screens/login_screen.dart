@@ -16,7 +16,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String _selectedUserType = 'Buyer';
   bool _isLoading = false;
   bool _obscureText = true;
 
@@ -37,24 +36,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (snapshot.exists) {
           Map<String, dynamic> userData = Map<String, dynamic>.from(snapshot.value as Map);
-          if (userData['userType'] == _selectedUserType) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('¡Inicio de sesión exitoso!'),
-                duration: Duration(seconds: 3),
-                backgroundColor: AppTheme.success,
-              ),
-            );
-            Navigator.pushReplacementNamed(context, '/home', arguments: _selectedUserType);
-          } else {
-            await FirebaseAuth.instance.signOut();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('El tipo de usuario no coincide.'),
-                duration: Duration(seconds: 3),
-                backgroundColor: AppTheme.error,
-              ),
-            );
+          final userType = userData['userType'] as String?;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Inicio de sesión exitoso!'),
+              duration: Duration(seconds: 2),
+              backgroundColor: AppTheme.success,
+            ),
+          );
+
+          switch (userType) {
+            case 'admin':
+              Navigator.pushReplacementNamed(context, '/admin_dashboard');
+              break;
+            case 'Buyer':
+            case 'Seller':
+              Navigator.pushReplacementNamed(context, '/home', arguments: userType);
+              break;
+            default:
+              await FirebaseAuth.instance.signOut();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Tipo de usuario desconocido o no especificado.'),
+                  duration: Duration(seconds: 3),
+                  backgroundColor: AppTheme.error,
+                ),
+              );
           }
         } else {
           await FirebaseAuth.instance.signOut();
@@ -68,9 +76,15 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
       } on FirebaseAuthException catch (e) {
+        String errorMessage = 'Ocurrió un error';
+        if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
+          errorMessage = 'Correo electrónico o contraseña incorrectos.';
+        } else {
+          errorMessage = e.message ?? errorMessage;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.message ?? 'Ocurrió un error'),
+            content: Text(errorMessage),
             duration: const Duration(seconds: 3),
             backgroundColor: AppTheme.error,
           ),
@@ -130,9 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             textAlign: TextAlign.center,
                             style: textTheme.headlineLarge,
                           ).animate().fade(duration: 500.ms, delay: 200.ms).slideY(begin: -0.5, end: 0),
-                          const SizedBox(height: 20.0),
-                          _buildUserTypeChips(),
-                          const SizedBox(height: 20.0),
+                          const SizedBox(height: 40.0), // Increased space
                           _buildEmailField(),
                           const SizedBox(height: 20.0),
                           _buildPasswordField(),
@@ -160,29 +172,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildUserTypeChips() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        ChoiceChip(
-          label: const Text('Comprador'),
-          selected: _selectedUserType == 'Buyer',
-          onSelected: (bool selected) {
-            if (selected) setState(() => _selectedUserType = 'Buyer');
-          },
-        ),
-        const SizedBox(width: 20.0),
-        ChoiceChip(
-          label: const Text('Vendedor'),
-          selected: _selectedUserType == 'Seller',
-          onSelected: (bool selected) {
-            if (selected) setState(() => _selectedUserType = 'Seller');
-          },
-        ),
-      ],
-    ).animate().fade(duration: 500.ms, delay: 400.ms).slideY(begin: -0.5, end: 0);
   }
 
   Widget _buildEmailField() {

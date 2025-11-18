@@ -92,7 +92,7 @@ class _CreateEditPublicationScreenState extends State<CreateEditPublicationScree
           await FirebaseStorage.instance.refFromURL(urlToRemove).delete();
         } catch (e) {
           // Ignore errors if the file doesn't exist
-          print('Failed to delete image from storage: $e');
+          debugPrint('Failed to delete image from storage: $e');
         }
       }
 
@@ -114,6 +114,8 @@ class _CreateEditPublicationScreenState extends State<CreateEditPublicationScree
       if (widget.publication != null) {
         await publicationsRef.child(widget.publication!.id).update(publicationData);
       } else {
+        publicationData['ratings'] = {};
+        publicationData['comments'] = [];
         await publicationsRef.push().set(publicationData);
       }
 
@@ -181,7 +183,7 @@ class _CreateEditPublicationScreenState extends State<CreateEditPublicationScree
           ),
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black54,
               child: const Center(child: CircularProgressIndicator()),
             ),
         ],

@@ -27,43 +27,50 @@ class _SellerHomeScreenState extends State<SellerHomeScreen> {
 
   Future<void> _fetchPublicationsAndSellers() async {
     try {
+      // 1. Fetch all users first and cache them
+      final usersSnapshot = await _database.child('users').get();
+      if (usersSnapshot.exists) {
+        final usersData = Map<String, dynamic>.from(usersSnapshot.value as Map);
+        usersData.forEach((key, value) {
+          _sellerData[key] = Map<String, dynamic>.from(value as Map);
+        });
+      }
+
+      // 2. Fetch all publications
       final publicationsSnapshot = await _database.child('publications').get();
       if (publicationsSnapshot.exists) {
         final Map<dynamic, dynamic> data = publicationsSnapshot.value as Map<dynamic, dynamic>;
         List<Publication> fetchedPublications = [];
-        Set<String> sellerIds = {};
 
         data.forEach((key, value) {
           final publication = Publication.fromMap(Map<String, dynamic>.from(value), key);
           fetchedPublications.add(publication);
-          sellerIds.add(publication.sellerId);
         });
-
-        // Fetch seller data for all unique seller IDs
-        for (String sellerId in sellerIds) {
-          final sellerSnapshot = await _database.child('users/$sellerId').get();
-          if (sellerSnapshot.exists) {
-            _sellerData[sellerId] = Map<String, dynamic>.from(sellerSnapshot.value as Map);
-          }
-        }
 
         // Shuffle publications to make them "random"
         fetchedPublications.shuffle();
-        setState(() {
-          _publications = fetchedPublications;
-          _isLoading = false;
-        });
+        
+        if (mounted) {
+          setState(() {
+            _publications = fetchedPublications;
+            _isLoading = false;
+          });
+        }
       } else {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'No hay publicaciones disponibles.';
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'No hay publicaciones disponibles.';
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Error al cargar publicaciones: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Error al cargar publicaciones: $e';
+        });
+      }
     }
   }
 
